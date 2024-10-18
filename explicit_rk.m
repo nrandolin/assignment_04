@@ -85,7 +85,7 @@ function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
     num_loop = 0;
     for i = 1:length(BT_struct.B)
         for j = 1:length(BT_struct.B)-1
-            k(i) = rate_func_in(t, t + BT_struct.C(i)*h*XA + h*BT_struct.A(i,j)*k(j));
+            k(i) = k(i) + rate_func_in(t, t + BT_struct.C(i)*h*XA + h*BT_struct.A(i,j)*k(j));
             num_loop = num_loop+1;
         end 
     end
