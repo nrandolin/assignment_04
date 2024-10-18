@@ -1,3 +1,5 @@
+clear;
+
 BT_struct.A = [0, 0; 0.5, 0];
 BT_struct.B = [0, 1];
 BT_struct.C = [0; 0.5];
@@ -12,7 +14,14 @@ X0 = 1;      % Initial conditions
 [XB, num_evals] = explicit_RK_step(@rate_func01,t,XA,h,BT_struct);
 
 [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
-(@rate_func01,tspan,X0,h,BT_struct)
+(@rate_func01,tspan,X0,h,BT_struct);
+
+figure(1);
+plot(t_list,X_list);
+hold on;
+plot(t_list,solution01(t_list))
+
+%compute_planetary_motion(t_list,V0,orbit_params)
 
 %% explicit_RK fixed_step integrator
 %Runs numerical integration arbitrary RK method
@@ -76,7 +85,7 @@ function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
     num_loop = 0;
     for i = 1:length(BT_struct.B)
         for j = 1:length(BT_struct.B)-1
-            k(i) = rate_func_in(t + BT_struct.C(i) * XA + h*BT_struct.A(i,j)*k(j), t);
+            k(i) = rate_func_in(t, t + BT_struct.C(i)*h*XA + h*BT_struct.A(i,j)*k(j));
             num_loop = num_loop+1;
         end 
     end
