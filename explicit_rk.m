@@ -255,9 +255,10 @@ for i = 1:length(h_list)
 
 end
 
-figure;
+
 [p_eighth,k_eighth] = loglog_fit(h_list,local_error_eighth);
 [p_diff,k_diff] = loglog_fit(h_list,difference);
+figure;
 loglog(h_list, local_error_eighth, 'b', 'LineWidth', 2);
 hold on
 loglog(h_list, difference, 'r', 'LineWidth', 2)
