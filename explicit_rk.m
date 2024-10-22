@@ -272,7 +272,9 @@ hold on
 loglog(h_list, local_error_eighth, 'r', 'LineWidth', 2);
 hold on
 loglog(h_list, difference, 'm', 'LineWidth', 2)
-title("Local Error 3/8-Rule Method")
+title("Local Error Method Comparison")
+xlabel("Step Size")
+ylabel("Local Error")
 legend("Heun's Method", "Ralston's Method", "3/8-Rule Method", "Difference")
 
 %% explicit_RK fixed_step integrator
