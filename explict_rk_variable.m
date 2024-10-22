@@ -14,7 +14,11 @@ t = 2;
 XA = solution01(t);
 h = 0.03;
 [XB1, XB2, num_evals] = RK_step_embedded(@rate_func01,t,XA,h,DormandPrince);
-
+%% testing variable step
+p = 3;
+error_desired = 0.05;
+[XB, num_evals, h_next, redo] = explicit_RK_variable_step...
+(@rate_func01,t,XA,h,DormandPrince,p,error_desired);
 %% LOCAL ERROR
 h_list = logspace(-5,1,100); 
 
@@ -42,10 +46,6 @@ for i = 1:length(h_list)
 
 end
 
-
-% [p_test1,k_test1] = loglog_fit(h_list,local_error_test1);
-% [p_test2,k_test2] = loglog_fit(h_list,local_error_test2);
-% [p_diff,k_diff] = loglog_fit(h_list,difference);
 figure;
 loglog(h_list, local_error_test1, 'b', 'LineWidth', 2);
 hold on
@@ -67,7 +67,17 @@ title("Local Error vs. |XB1-XB2|")
 legend("XB1", "XB2")
 ylabel("Local Error")
 xlabel("|XB1-XB2|")
-
+%% RK Variable Step
+function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
+(rate_func_in,t,XA,h,BT_struct,p,error_desired)
+    alpha = 1.5; % btwn 1.5 and 10, inclusive
+    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct);
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2))^(1/p),alpha);
+    XB = XB1;
+    X_analytical = rate_func_in(t+h_next,XB);
+    estimated_error = norm(XB - X_analytical);
+    redo = error_desired<estimated_error;
+end
 %% RK_step_embedded
 %This function computes the value of X at the next time step
 %for any arbitrary embedded RK method
