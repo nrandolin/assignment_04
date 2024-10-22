@@ -16,7 +16,7 @@ X0 = 1;      % Initial conditions
 [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
 (@rate_func01,tspan,X0,h,BT_struct);
 
-figure(1);
+figure;
 plot(t_list,X_list);
 hold on;
 plot(t_list,solution01(t_list))
@@ -36,12 +36,13 @@ V0 = [x0;y0;dxdt0;dydt0];
 t_range = linspace(0,30,100);
 V_list = compute_planetary_motion(t_range,V0,orbit_params);
 
-
+figure;
 axis equal; axis square;
 axis([-20,20,-20,20])
 hold on
 plot(0,0,'ro','markerfacecolor','r','markersize',5);
 plot(V_list(:,1),V_list(:,2),'k');
+hold off
 
 %% Heun's method
 filterparams.min_xval = 0;
@@ -54,14 +55,14 @@ h = 0.1;
 t0 = 0;          % Start time
 tf = 5;        % End time (replace with the desired final time)
 tspan = [t0, tf];  % Full integration interval  
-XA = solution01(tf);
+XA = solution01(t0);
 
 
 % APPROXIMATION
 [t_list_heun,X_list_heun,h_avg_heun,num_evals_heun] = explicit_RK_fixed_step_integration ...
 (@rate_func01,tspan,XA,h,BT_struct);
 
-figure(1);
+figure;
 plot(t_list_heun,X_list_heun, 'b', 'LineWidth', 2);
 hold on;
 plot(t_list_heun,solution01(t_list_heun), '--r', 'LineWidth', 2)
@@ -91,7 +92,7 @@ for i = 1:length(h_list)
 
 end
 
-figure(2);
+figure;
 [p_heun,k_heun] = loglog_fit(h_list,local_error_heun)
 [p_diff,k_diff] = loglog_fit(h_list,difference)
 loglog(h_list, local_error_heun, 'b', 'LineWidth', 2);
@@ -137,13 +138,13 @@ BT_struct.C = [0; 0/5; 0.75];
 t0 = 0;          % Start time
 tf = 5;        % End time (replace with the desired final time)
 tspan = [t0, tf];  % Full integration interval  
-XA = solution01(tf);
+XA = solution01(t0);
 h = 0.1;
 
 [t_list_ralston,X_list_ralston,h_avg_ralston,num_evals_ralston] = explicit_RK_fixed_step_integration ...
 (@rate_func01,tspan,XA,h,BT_struct);
 
-figure(1);
+figure;
 plot(t_list_ralston,X_list_ralston, 'b', 'LineWidth', 2);
 hold on;
 plot(t_list_ralston,solution01(t_list_ralston), '--r', 'LineWidth', 2)
@@ -173,7 +174,7 @@ for i = 1:length(h_list)
 
 end
 
-figure(2);
+figure;
 [p_ralston,k_ralston] = loglog_fit(h_list,local_error_ralston);
 [p_diff,k_diff] = loglog_fit(h_list,difference);
 loglog(h_list, local_error_ralston, 'b', 'LineWidth', 2);
@@ -218,13 +219,13 @@ BT_struct.C = [0; 1/3; 2/3; 1];
 t0 = 0;          % Start time
 tf = 5;        % End time (replace with the desired final time)
 tspan = [t0, tf];  % Full integration interval  
-XA = solution01(tf);
+XA = solution01(t0);
 h = 0.1;
 
 [t_list_eighth,X_list_eighth,h_avg_eighth,num_evals_eighth] = explicit_RK_fixed_step_integration ...
 (@rate_func01,tspan,XA,h,BT_struct);
 
-figure(1);
+figure;
 plot(t_list_eighth,X_list_eighth, 'b', 'LineWidth', 2);
 hold on;
 plot(t_list_eighth,solution01(t_list_eighth), '--r', 'LineWidth', 2)
@@ -254,7 +255,7 @@ for i = 1:length(h_list)
 
 end
 
-figure(2);
+figure;
 [p_eighth,k_eighth] = loglog_fit(h_list,local_error_eighth);
 [p_diff,k_diff] = loglog_fit(h_list,difference);
 loglog(h_list, local_error_eighth, 'b', 'LineWidth', 2);
@@ -264,7 +265,7 @@ title("Local Error 3/8-Rule Method")
 legend("3/8-Rule Method", "Difference")
 
 %% FULL LOCAL PLOT
-figure(2);
+figure;
 loglog(h_list, local_error_heun, 'b', 'LineWidth', 2);
 hold on
 loglog(h_list, local_error_ralston, 'g', 'LineWidth', 2);
