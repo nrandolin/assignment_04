@@ -336,15 +336,11 @@ end
 % rate_func_in when computing the next step
 function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
     k = zeros(length(XA),length(BT_struct.B));
-    num_loop = 0;
     for i = 1:length(BT_struct.B)
-        for j = 1:length(BT_struct.B)-1
-            k(:,i) = rate_func_in(t+BT_struct.C(i)*h, XA+h*(k*BT_struct.A(i,:)'));
-            num_loop = num_loop+1;
-        end 
+        k(:,i) = rate_func_in(t+BT_struct.C(i)*h, XA+h*(k*BT_struct.A(i,:)'));
     end
     XB = XA + h*(k*BT_struct.B');
-    num_evals = num_loop;
+    num_evals = length(BT_struct.B);
 end
 %% RATE_FUNC01
 function dXdt = rate_func01(t,X)
