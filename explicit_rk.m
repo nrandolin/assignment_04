@@ -21,6 +21,7 @@ plot(t_list,X_list);
 hold on;
 plot(t_list,solution01(t_list))
 
+%% PLANETARY MOTION
 % testing compute_planetary motion
 orbit_params = struct();
 orbit_params.m_sun = 1;
@@ -43,52 +44,236 @@ plot(0,0,'ro','markerfacecolor','r','markersize',5);
 plot(V_list(:,1),V_list(:,2),'k');
 
 %% Heun's method
+filterparams.min_xval = 0;
+filterparams.max_xval = 0.01;
+
 BT_struct.A = [0, 0; 1, 0];
 BT_struct.B = [0.5, 0.5];
 BT_struct.C = [0; 1];
-t = 2;
-XA = solution01(t);
 h = 0.1;
+t0 = 0;          % Start time
+tf = 5;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+XA = solution01(tf);
 
+
+% APPROXIMATION
 [t_list_heun,X_list_heun,h_avg_heun,num_evals_heun] = explicit_RK_fixed_step_integration ...
-(@rate_func01,tspan,X0,h,BT_struct);
+(@rate_func01,tspan,XA,h,BT_struct);
 
 figure(1);
-plot(t_list_heun,X_list_heun, 'b');
+plot(t_list_heun,X_list_heun, 'b', 'LineWidth', 2);
 hold on;
-plot(t_list_heun,solution01(t_list_heun), 'r')
+plot(t_list_heun,solution01(t_list_heun), '--r', 'LineWidth', 2)
+title("Heun's Method Approximated Solution")
+legend("Heun's Method", "True Solution")
+
+% LOCAL
+h_list = logspace(-5,1,100); 
+
+local_error_heun = [];
+X_true = [];
+difference = [];
+
+t_ref = 4.49;
+XA = solution01(t_ref);
+
+for i = 1:length(h_list)
+   h_ref = h_list(i);
+    
+   [XB_heun,~] = explicit_RK_step(@rate_func01,t_ref,XA,h_ref,BT_struct);
+
+   X_analytical = solution01(t_ref+h_ref);
+    
+   X_true = [X_true, X_analytical];
+   local_error_heun = [local_error_heun, norm(XB_heun - X_analytical)];
+   difference = [difference, norm(X_analytical-solution01(t_ref))];
+
+end
+
+figure(2);
+[p_heun,k_heun] = loglog_fit(h_list,local_error_heun)
+[p_diff,k_diff] = loglog_fit(h_list,difference)
+loglog(h_list, local_error_heun, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'r', 'LineWidth', 2)
+title("Local Error Heun's Method")
+legend("Heun Method's", "Difference")
+
+% GLOBAL ERROR
+% h_list = logspace(-3,1,50);  % Time step sizes
+% global_error_heun = [];
+% rate_function_calls_heun = [];
+% X_true = [];
+% results_matrix = zeros(length(h_list), 6);
+% 
+% for i = 1:length(h_list)
+%    h_ref = h_list(i);
+%    [t_list_heun,X_list_heun,h_avg_heun,num_evals_heun] = explicit_RK_fixed_step_integration ...
+%    (@rate_func01,tspan,XA,h,BT_struct);
+%   
+%    X_numerical = X_list_heun(end,:)'; 
+%    X_analytical = solution01(tf);
+% 
+% 
+%    global_error_heun = [global_error_heun, norm(X_numerical - X_analytical)];
+%    rate_function_calls_heun = [rate_function_calls_heun, num_evals_heun];
+% 
+% end
+
+%[p_heun,k_heun] = loglog_fit(rate_function_calls_heun,global_error_heun, filterparams);
+%[p_heun_step,k_heun_step] = loglog_fit(h_list,global_error_heun, filterparams);
+
+% figure(3);
+% loglog(h_list, num_evals_heun);
+% loglog(rate_function_calls_heun, k_heun*rate_function_calls_heun.^p_heun, 'r--', 'LineWidth', 1.5);
 
 %% Ralston's Third-Order Method
+filterparams.min_xval = 0;
+filterparams.max_xval = 0.01;
 BT_struct.A = [0, 0, 0; 0.5, 0, 0; 0, 0.75, 0];
 BT_struct.B = [2/9, 1/3, 4/9];
 BT_struct.C = [0; 0/5; 0.75];
-t = 2;
-XA = solution01(t);
+t0 = 0;          % Start time
+tf = 5;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+XA = solution01(tf);
 h = 0.1;
 
 [t_list_ralston,X_list_ralston,h_avg_ralston,num_evals_ralston] = explicit_RK_fixed_step_integration ...
-(@rate_func01,tspan,X0,h,BT_struct);
+(@rate_func01,tspan,XA,h,BT_struct);
 
 figure(1);
-plot(t_list_ralston,X_list_ralston, 'b');
+plot(t_list_ralston,X_list_ralston, 'b', 'LineWidth', 2);
 hold on;
-plot(t_list_ralston,solution01(t_list_ralston), 'r')
+plot(t_list_ralston,solution01(t_list_ralston), '--r', 'LineWidth', 2)
+title("Ralston's Third-Order Method Approximated Solution")
+legend("Ralston's Third-Order Method", "True Solution")
+
+% LOCAL
+h_list = logspace(-5,1,100); 
+
+local_error_ralston = [];
+X_true = [];
+difference = [];
+
+t_ref = 4.49;
+XA = solution01(t_ref);
+
+for i = 1:length(h_list)
+   h_ref = h_list(i);
+    
+   [XB_ralston,~] = explicit_RK_step(@rate_func01,t_ref,XA,h_ref,BT_struct);
+
+   X_analytical = solution01(t_ref+h_ref);
+    
+   X_true = [X_true, X_analytical];
+   local_error_ralston = [local_error_ralston, norm(XB_ralston - X_analytical)];
+   difference = [difference, norm(X_analytical-solution01(t_ref))];
+
+end
+
+figure(2);
+[p_ralston,k_ralston] = loglog_fit(h_list,local_error_ralston);
+[p_diff,k_diff] = loglog_fit(h_list,difference);
+loglog(h_list, local_error_ralston, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'r', 'LineWidth', 2)
+title("Local Error Ralston Method")
+legend("Ralston Method", "Difference")
+
+% GLOBAL
+% 
+% h_list = logspace(-3,1,50);  % Time step sizes
+% global_error_ralston = [];
+% rate_function_calls_ralston = [];
+% X_true = [];
+% results_matrix = zeros(length(h_list), 6);
+% 
+% for i = 1:length(h_list)
+%    h_ref = h_list(i);
+%    [t_list_ralston,X_list_ralston,h_avg_ralston,num_evals_ralston] = explicit_RK_fixed_step_integration ...
+%    (@rate_func01,tspan,XA,h,BT_struct);
+%   
+%    X_numerical = X_list_ralston(end,:)'; 
+%    X_analytical = solution01(tf);
+% 
+% 
+%    global_error_ralston = [global_error_ralston, norm(X_numerical - X_analytical)];
+%    rate_function_calls_ralston = [rate_function_calls_ralston, num_evals_heun];
+% 
+% end
+% 
+% [p_g_ralston,k_g_ralston] = loglog_fit(rate_function_calls_ralston,global_error_ralston, filterparams);
+% [p_ralston_step,k_ralston_step] = loglog_fit(h_list,global_error_ralston, filterparams);
+% 
+% figure(3);
+% loglog(h_list, num_evals_ralston);
+% loglog(rate_function_calls_ralston, k_ralston_step*rate_function_calls_ralston.^p_ralston_step, 'r--', 'LineWidth', 1.5);
 
 %% 3/8-Rule Fourth-Order Method
 BT_struct.A = [0, 0, 0, 0; 1/3, 0, 0, 0; -1/3, 1, 0, 0; 1, -1, 1, 0];
 BT_struct.B = [1/8, 3/8, 3/8, 1/8];
-BT_struct.C = [0; 1/3; 2/3; 1]
-t = 2;
-XA = solution01(t);
+BT_struct.C = [0; 1/3; 2/3; 1];
+t0 = 0;          % Start time
+tf = 5;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+XA = solution01(tf);
 h = 0.1;
 
 [t_list_eighth,X_list_eighth,h_avg_eighth,num_evals_eighth] = explicit_RK_fixed_step_integration ...
-(@rate_func01,tspan,X0,h,BT_struct);
+(@rate_func01,tspan,XA,h,BT_struct);
 
 figure(1);
-plot(t_list_eighth,X_list_eighth, 'b');
+plot(t_list_eighth,X_list_eighth, 'b', 'LineWidth', 2);
 hold on;
-plot(t_list_eighth,solution01(t_list_eighth), 'r')
+plot(t_list_eighth,solution01(t_list_eighth), '--r', 'LineWidth', 2)
+title("3/8-Rule Fourth-Order Approximated Solution")
+legend("3/8-Rule Fourth-Order", "True Solution")
+
+% LOCAL
+h_list = logspace(-5,1,100); 
+
+local_error_eighth = [];
+X_true = [];
+difference = [];
+
+t_ref = 4.49;
+XA = solution01(t_ref);
+
+for i = 1:length(h_list)
+   h_ref = h_list(i);
+    
+   [XB_eighth,~] = explicit_RK_step(@rate_func01,t_ref,XA,h_ref,BT_struct);
+
+   X_analytical = solution01(t_ref+h_ref);
+    
+   X_true = [X_true, X_analytical];
+   local_error_eighth = [local_error_eighth, norm(XB_eighth - X_analytical)];
+   difference = [difference, norm(X_analytical-solution01(t_ref))];
+
+end
+
+figure(2);
+[p_eighth,k_eighth] = loglog_fit(h_list,local_error_eighth);
+[p_diff,k_diff] = loglog_fit(h_list,difference);
+loglog(h_list, local_error_eighth, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'r', 'LineWidth', 2)
+title("Local Error 3/8-Rule Method")
+legend("3/8-Rule Method", "Difference")
+
+%% FULL LOCAL PLOT
+figure(2);
+loglog(h_list, local_error_heun, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, local_error_ralston, 'g', 'LineWidth', 2);
+hold on
+loglog(h_list, local_error_eighth, 'r', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'm', 'LineWidth', 2)
+title("Local Error 3/8-Rule Method")
+legend("Heun's Method", "Ralston's Method", "3/8-Rule Method", "Difference")
 
 %% explicit_RK fixed_step integrator
 %Runs numerical integration arbitrary RK method
@@ -124,7 +309,7 @@ function [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration .
         [XB, temp_eval] = explicit_RK_step(rate_func_in,t,XA,h_avg,BT_struct);
         num_evals = num_evals + temp_eval;
 
-        X_list(i+1,:)= XB';
+        X_list(i+1,:)= XB;
         XA = XB;
     end  
 end
@@ -148,68 +333,16 @@ end
 %num_evals: A count of the number of times that you called
 % rate_func_in when computing the next step
 function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
-    k = zeros(length(BT_struct.B), 1);
+    k = zeros(length(XA),length(BT_struct.B));
     num_loop = 0;
     for i = 1:length(BT_struct.B)
         for j = 1:length(BT_struct.B)-1
-            k(i) = k(i) + rate_func_in(t, t + BT_struct.C(i)*h*XA + h*BT_struct.A(i,j)*k(j));
+            k(:,i) = rate_func_in(t+BT_struct.C(i)*h, XA+h*(k*BT_struct.A(i,:)'));
             num_loop = num_loop+1;
         end 
     end
-    func = @(XB) XA + h*BT_struct.B*k;
-    [XB, num_evals] = multi_newton_solver(func, XA, true);
-    num_evals = num_evals + num_loop;
-end
-
-%% MULTI NEWTON SOLVER
-function [x_next, num_evals] = multi_newton_solver(fun,x_guess,varargin)
-%true if supposed to use analytical jacobian, false otherwise
-use_analytical_jacobian = nargin==3 && varargin{1}(1);
-
-A_thresh = 10e-14;
-B_thresh = 10e-14;
-num_evals = 0;
-
-    if use_analytical_jacobian == true
-    f_val = fun(x_guess);
-    num_evals = 1;
-    J = approximate_jacobian(fun,x_guess);
-    x_next = x_guess;
-        while max(abs(J\f_val))> A_thresh && max(abs(f_val))>B_thresh && abs(det(J*J')) > 1e-14
-            %calculate next x
-            x_next = x_next - J\f_val;
-            %establish next y value
-            f_val = fun(x_next);
-            J = approximate_jacobian(fun,x_next);  
-            num_evals = num_evals+1;
-        end
-    end
-
-%Loop through until x is small
-    if use_analytical_jacobian == false
-    [f_val, J] = fun(x_guess);
-    x_next = x_guess;
-        while max(abs(J\f_val))> A_thresh && max(abs(f_val))>B_thresh && abs(det(J*J')) > 1e-14
-            %calculate next x
-            x_next = x_next - J\f_val;
-            %establish next y value
-            [f_val, J]  = fun(x_next);        
-        end
-    end
-
-end
-%% APPROX JACOBIAN
-function J = approximate_jacobian(fun,x)
-    % Set initial variables
-    ej = zeros(length(x), 1); %variable to store vector of multiplyers
-    h = 1e-6;
-    J = zeros(length(fun(x)), length(x));
-    for i = 1:size(J, 2)
-        ej(i) = 1;
-        % calculate the partial derivative 
-        J(:, i) = (fun(x+h*ej) - fun(x-h*ej))/(2*h);
-        ej(i) = 0;
-    end 
+    XB = XA + h*(k*BT_struct.B');
+    num_evals = num_loop;
 end
 %% RATE_FUNC01
 function dXdt = rate_func01(t,X)
