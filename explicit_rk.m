@@ -21,7 +21,74 @@ plot(t_list,X_list);
 hold on;
 plot(t_list,solution01(t_list))
 
-%compute_planetary_motion(t_list,V0,orbit_params)
+% testing compute_planetary motion
+orbit_params = struct();
+orbit_params.m_sun = 1;
+orbit_params.m_planet = 1;
+orbit_params.G = 40;
+x0 = 8;
+y0 = 0;
+dxdt0 = 0;
+dydt0 = 1.5;
+
+V0 = [x0;y0;dxdt0;dydt0];
+t_range = linspace(0,30,100);
+V_list = compute_planetary_motion(t_range,V0,orbit_params);
+
+
+axis equal; axis square;
+axis([-20,20,-20,20])
+hold on
+plot(0,0,'ro','markerfacecolor','r','markersize',5);
+plot(V_list(:,1),V_list(:,2),'k');
+
+%% Heun's method
+BT_struct.A = [0, 0; 1, 0];
+BT_struct.B = [0.5, 0.5];
+BT_struct.C = [0; 1];
+t = 2;
+XA = solution01(t);
+h = 0.1;
+
+[t_list_heun,X_list_heun,h_avg_heun,num_evals_heun] = explicit_RK_fixed_step_integration ...
+(@rate_func01,tspan,X0,h,BT_struct);
+
+figure(1);
+plot(t_list_heun,X_list_heun, 'b');
+hold on;
+plot(t_list_heun,solution01(t_list_heun), 'r')
+
+%% Ralston's Third-Order Method
+BT_struct.A = [0, 0, 0; 0.5, 0, 0; 0, 0.75, 0];
+BT_struct.B = [2/9, 1/3, 4/9];
+BT_struct.C = [0; 0/5; 0.75];
+t = 2;
+XA = solution01(t);
+h = 0.1;
+
+[t_list_ralston,X_list_ralston,h_avg_ralston,num_evals_ralston] = explicit_RK_fixed_step_integration ...
+(@rate_func01,tspan,X0,h,BT_struct);
+
+figure(1);
+plot(t_list_ralston,X_list_ralston, 'b');
+hold on;
+plot(t_list_ralston,solution01(t_list_ralston), 'r')
+
+%% 3/8-Rule Fourth-Order Method
+BT_struct.A = [0, 0, 0, 0; 1/3, 0, 0, 0; -1/3, 1, 0, 0; 1, -1, 1, 0];
+BT_struct.B = [1/8, 3/8, 3/8, 1/8];
+BT_struct.C = [0; 1/3; 2/3; 1]
+t = 2;
+XA = solution01(t);
+h = 0.1;
+
+[t_list_eighth,X_list_eighth,h_avg_eighth,num_evals_eighth] = explicit_RK_fixed_step_integration ...
+(@rate_func01,tspan,X0,h,BT_struct);
+
+figure(1);
+plot(t_list_eighth,X_list_eighth, 'b');
+hold on;
+plot(t_list_eighth,solution01(t_list_eighth), 'r')
 
 %% explicit_RK fixed_step integrator
 %Runs numerical integration arbitrary RK method

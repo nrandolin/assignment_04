@@ -40,12 +40,33 @@ function V_list = compute_planetary_motion(t_list,V0,orbit_params)
     vx0 = V0(3);
     vy0 = V0(4);
 
-    r0 = abs(x0+y0*i);
-    theta0 = angle(x0+y0*i);
+    Q1 = abs(x0*vy0-y0*vx0);
+    Q2 = abs(1/2*(vx0^2+vy0^2)-m_sun*G/sqrt(x0^2+y0^2));
+
+    tau = Q1/Q2;
+    l_scale = sqrt(Q1^2/Q2);
+    velocity_scale = sqrt(Q2);
+
+    x0=x0/l_scale;
+    y0=y0/l_scale;
+    vx0 = vx0/velocity_scale;
+    vy0 = vy0/velocity_scale;
+
+    t_list = t_list/tau;
+
+
+    G = m_sun*G/(Q1*sqrt(Q2));
+    m_sun = 1;
+    m_planet = 1;
+
 
     H0 = m_planet*(x0*vy0-y0*vx0);
+
     dArea_dt = .5*H0/m_planet;
 
+
+    r0 = abs(x0+y0*i);
+    theta0 = angle(x0+y0*i);
 
     rdot0 = (vx0*x0+vy0*y0)/r0;
     theta_dot0 = H0/(m_planet*r0^2);
@@ -140,6 +161,10 @@ function V_list = compute_planetary_motion(t_list,V0,orbit_params)
 
         V_list(n,:)=[x_out,y_out,vx_out,vy_out];
     end
+
+
+    V_list = [V_list(:,1)*l_scale, V_list(:,2)*l_scale,...
+            V_list(:,3)*velocity_scale, V_list(:,4)*velocity_scale];
 
     if isscalar(t_list)
         V_list = V_list';
