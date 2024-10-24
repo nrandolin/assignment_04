@@ -105,23 +105,24 @@ function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integratio
     % do this with varying step size
     while t ~= tspan(2)
         while redo == 1
-            [XB, temp_evals, h_next, redo] = explicit_RK_variable_step...
+            [XB, num_evals_temp, h_next, redo] = explicit_RK_variable_step...
             (rate_func_in,t,XA,h_test(end),BT_struct,p,error_desired);
             h_test = [h_test, h_next]; %add the next predicted h to the loop
         end
         h = h_test(end-1);  % the actual h used was one less than the one now
         t_temp = t+h;
         % end early?
-        if t > tspan(2)
+        if t_temp > tspan(2)
             h_final = tspan(2)-t_list(end);
             h_test = [h_final, h_final];
             continue
         end
         t = t_temp;
         h_list = [h_list, h]; % create a list of used h values
-        h_test = [h_ref, h_ref]; % move h_test back to original for next iteration (needs to be 2 for indexing)
         t_list = [t_list, t]; %add timestep to list
         X_list = [X_list, XB];% update evaluation
+        redo = 1;
+        num_evals = num_evals + num_evals_temp;
     end
 
     h_avg = mean(h_list);
