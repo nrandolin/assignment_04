@@ -19,6 +19,7 @@ p = 3;
 error_desired = 0.05;
 tspan = [0, 2];
 X0 = XA;
+h_ref = 0.01;
 [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (@rate_func01,t,XA,h,DormandPrince,p,error_desired);
 [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
@@ -96,19 +97,25 @@ function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integratio
     h = h_ref;
     h_list = h_ref;
     X_list = [];
-    t_list = linspace(tspan(1),tspan(2),100); % change num_steps
+    t_list = []; % change num_steps
     XA = X0;
     redo = 1;
     % probably need a for loop for iterating through time, not sure how to
     % do this with varying step size
-    while redo == 1
-        [XB, temp_evals, h_next, redo] = explicit_RK_variable_step...
-        (rate_func_in,t,XA,h,BT_struct,p,error_desired);
-        h = h_next;
-        num_evals = num_evals + temp_evals;
+    while abs(tspan(1)-tspan(2)) >= h_ref
+        t = tspan(1);
+        while redo == 1
+            [XB, temp_evals, h_next, redo] = explicit_RK_variable_step...
+            (rate_func_in,t,XA,h,BT_struct,p,error_desired);
+            h = h_next;
+            num_evals = num_evals + temp_evals;
+        end
         h_list = [h_list, h_next];
+        t_list = [t_list, t];
         X_list = [X_list, XB];
+        tspan(1) = tspan(1)+h_next;
     end
+
     h_avg = mean(h_list);
 
 %     % calculate steps and h
@@ -134,12 +141,12 @@ end
 %% RK Variable Step
 function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
-    alpha = 1.5; % btwn 1.5 and 10, inclusive
-    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct);
-    h_next = h*min(0.9*(error_desired/abs(XB1-XB2))^(1/p),alpha);
+    alpha = 4; % btwn 1.5 and 10, inclusive
+    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2))^(1/p),alpha); % calculate h_next
     XB = XB1;
-    X_analytical = rate_func_in(t+h_next,XB);
-    estimated_error = norm(XB - X_analytical);
+    X_analytical = rate_func_in((t+h_next), XB); %calculate real solution %Problem is here!!
+    estimated_error = abs(XB - X_analytical);% calculate error
     redo = error_desired<estimated_error;
 end
 %% RK_step_embedded

@@ -14,13 +14,24 @@ t = 2;
 XA = solution01(t);
 h = 0.03;
 [XB1, XB2, num_evals] = RK_step_embedded(@rate_func01,t,XA,h,DormandPrince);
-
+%% testing variable step
+p = 3;
+error_desired = 0.05;
+tspan = [0, 2];
+X0 = XA;
+h_ref = 0.01;
+[XB, num_evals, h_next, redo] = explicit_RK_variable_step...
+(@rate_func01,t,XA,h,DormandPrince,p,error_desired);
+[t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+(@rate_func01,tspan,X0,h_ref,DormandPrince,p,error_desired)
 %% LOCAL ERROR
 h_list = logspace(-5,1,100); 
 
-local_error_test = [];
+local_error_test1 = [];
+local_error_test2 = [];
 X_true = [];
 difference = [];
+minus = [];
 
 t_ref = 4.49;
 XA = solution01(t_ref);
@@ -36,22 +47,108 @@ for i = 1:length(h_list)
    local_error_test1 = [local_error_test1, norm(XB1 - X_analytical)];
    local_error_test2 = [local_error_test2, norm(XB2 - X_analytical)];
    difference = [difference, norm(X_analytical-solution01(t_ref))];
+   minus = [minus, abs(XB1-XB2)];
 
 end
 
-
-[p_test1,k_test1] = loglog_fit(h_list,local_error_test1);
-[p_test2,k_test2] = loglog_fit(h_list,local_error_test2);
-[p_diff,k_diff] = loglog_fit(h_list,difference);
 figure;
 loglog(h_list, local_error_test1, 'b', 'LineWidth', 2);
 hold on
 loglog(h_list, local_error_test2, 'g', 'LineWidth', 2);
 hold on
+loglog(h_list, minus, 'm', 'LineWidth', 2);
+hold on
 loglog(h_list, difference, 'r', 'LineWidth', 2)
-title("Local Error")
-legend("XB1", "XB2", "Difference")
+title("Local Error Test")
+legend("XB1", "XB2", "|XB1-XB2|","Difference")
+ylabel("Local Error")
+xlabel("Step Size")
 
+figure;
+loglog(minus, local_error_test1, 'b', 'LineWidth', 2);
+hold on
+loglog(minus, local_error_test2, 'g', 'LineWidth', 2);
+title("Local Error vs. |XB1-XB2|")
+legend("XB1", "XB2")
+ylabel("Local Error")
+xlabel("|XB1-XB2|")
+%% RK Variable Step Integration
+%Runs numerical integration arbitrary RK method using variable time steps
+%INPUTS:
+%rate_func_in: the function used to compute dXdt. rate_func_in will
+% have the form: dXdt = rate_func_in(t,X) (t is before X)
+%tspan: a two element vector [t_start,t_end] that denotes the integration endpoints
+%X0: the vector describing the initial conditions, X(t_start)
+%h_ref: the desired value of the average step size (not the actual value)
+%BT_struct: a struct that contains the Butcher tableau
+% BT_struct.A: matrix of a_{ij} values
+% BT_struct.B: vector of b_i values
+% BT_struct.C: vector of c_i values
+%p: how error scales with step size (error = k*h^p)
+%error_desired: the desired local truncation error at each step
+%OUTPUTS:
+%t_list: the vector of times, [t_start;t_1;t_2;...;.t_end] that X is approximated at
+%X_list: the vector of X, [X0’;X1’;X2’;...;(X_end)’] at each time step
+%h_avg: the average step size
+%num_evals: total number of calls made to rate_func_in during the integration
+function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+(rate_func_in,tspan,X0,h_ref,BT_struct,p,error_desired)
+    num_evals = 0;
+    h = h_ref;
+    h_list = h_ref;
+    X_list = [];
+    t_list = []; % change num_steps
+    XA = X0;
+    redo = 1;
+    % probably need a for loop for iterating through time, not sure how to
+    % do this with varying step size
+    while abs(tspan(1)-tspan(2)) >= h_ref
+        t = tspan(1);
+        while redo == 1
+            [XB, temp_evals, h_next, redo] = explicit_RK_variable_step...
+            (rate_func_in,t,XA,h,BT_struct,p,error_desired);
+            h = h_next;
+            num_evals = num_evals + temp_evals;
+        end
+        h_list = [h_list, h_next];
+        t_list = [t_list, t];
+        X_list = [X_list, XB];
+        tspan(1) = tspan(1)+h_next;
+    end
+
+    h_avg = mean(h_list);
+
+%     % calculate steps and h
+%     [num_steps, h_avg] = iteration_solver(tspan, h_ref);
+%     % define variables
+%     XA = X0;
+%     num_evals = 0;
+%     t_list = linspace(tspan(1),tspan(2),num_steps+1);
+%  
+%     X_list = zeros(num_steps+1,length(X0));
+%     X_list(1,:) = X0';
+%     %calculate the values until it is just short of the end value
+%     for i = 1:num_steps
+%         t = t_list(i);
+%         [XB, temp_eval] = explicit_RK_step(rate_func_in,t,XA,h_avg,BT_struct);
+%         num_evals = num_evals + temp_eval;
+% 
+%         X_list(i+1,:)= XB;
+%         XA = XB;
+%     end  
+end
+
+%% RK Variable Step
+function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
+(rate_func_in,t,XA,h,BT_struct,p,error_desired)
+    alpha = 10; % btwn 1.5 and 10, inclusive
+    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2))^(1/p),alpha); % calculate h_next
+    XB = XB1;
+    X_analytical = rate_func_in((t+h_next), XB); %calculate real solution % Problem is here!!
+    estimated_error = abs(XB - X_analytical);% calculate error
+    redo = error_desired<estimated_error;
+end
 %% RK_step_embedded
 %This function computes the value of X at the next time step
 %for any arbitrary embedded RK method
