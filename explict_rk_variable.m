@@ -22,8 +22,27 @@ X0 = XA;
 h_ref = 0.01;
 [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (@rate_func01,t,XA,h,DormandPrince,p,error_desired);
-[t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+[t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
 (@rate_func01,tspan,X0,h_ref,DormandPrince,p,error_desired)
+
+%%
+desired_error_range = linspace(0.01,0.1,11);
+x0 = 6;
+y0 = 10;
+dxdt0 = 0;
+dydt0 = 1.5;
+V0 = [x0;y0;dxdt0;dydt0];
+orbit_params = struct();
+orbit_params.m_sun = 1;
+orbit_params.m_planet = 1;
+orbit_params.G = 40;
+my_rate_func = @(t_in,V_in) gravity_rate_func(t_in,V_in,orbit_params);
+
+for error_desired = desired_error_range
+    [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
+    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error_desired);
+end
+
 %% LOCAL ERROR
 h_list = logspace(-5,1,100); 
 
@@ -91,7 +110,7 @@ xlabel("|XB1-XB2|")
 %X_list: the vector of X, [X0’;X1’;X2’;...;(X_end)’] at each time step
 %h_avg: the average step size
 %num_evals: total number of calls made to rate_func_in during the integration
-function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
 (rate_func_in,tspan,X0,h_ref,BT_struct,p,error_desired)
     num_evals = 0;
     t = tspan(1);
@@ -101,14 +120,17 @@ function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integratio
     t_list = t; % change num_steps
     XA = X0;
     redo = 1;
+    num_failed_steps = 0;
     % probably need a for loop for iterating through time, not sure how to
     % do this with varying step size
     while t ~= tspan(2)
         while redo == 1
+            num_failed_steps = num_failed_steps + 1;
             [XB, num_evals_temp, h_next, redo] = explicit_RK_variable_step...
             (rate_func_in,t,XA,h_test(end),BT_struct,p,error_desired);
             h_test = [h_test, h_next]; %add the next predicted h to the loop
         end
+        num_failed_steps = num_failed_steps - 1;
         h = h_test(end-1);  % the actual h used was one less than the one now
         t_temp = t+h;
         % end early?
@@ -124,7 +146,7 @@ function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integratio
         redo = 1;
         num_evals = num_evals + num_evals_temp;
     end
-
+    percent_failed = num_failed_steps/(num_evals);
     h_avg = mean(h_list);
 
 %     % calculate steps and h
@@ -151,11 +173,11 @@ end
 function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
     alpha = 4; % btwn 1.5 and 10, inclusive
-    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
-    h_next = h*min(0.9*(error_desired/abs(XB1-XB2))^(1/p),alpha); % calculate h_next
+    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct) %run 1 step of the solver (on original ts)
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha); % calculate h_next
     XB = XB1;
-    estimated_error = abs(XB1 - XB2);% calculate error
-    redo = error_desired<estimated_error;
+    estimated_error = abs(XB1 - XB2)% calculate error
+    redo = error_desired<estimated_error
 end
 %% RK_step_embedded
 %This function computes the value of X at the next time step

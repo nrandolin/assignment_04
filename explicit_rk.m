@@ -27,14 +27,15 @@ orbit_params = struct();
 orbit_params.m_sun = 1;
 orbit_params.m_planet = 1;
 orbit_params.G = 40;
-x0 = 8;
-y0 = 0;
+x0 = 6;
+y0 = 10;
 dxdt0 = 0;
 dydt0 = 1.5;
 
 V0 = [x0;y0;dxdt0;dydt0];
-t_range = linspace(0,30,100);
-V_list = compute_planetary_motion(t_range,V0,orbit_params);
+t_range = linspace(0,40,500);
+%V_list = compute_planetary_motion(t_range,V0,orbit_params);
+[V_list,E_list,H_list] = compute_planetary_motionVEH(t_range,V0,orbit_params);
 
 figure;
 axis equal; axis square;
@@ -42,6 +43,19 @@ axis([-20,20,-20,20])
 hold on
 plot(0,0,'ro','markerfacecolor','r','markersize',5);
 plot(V_list(:,1),V_list(:,2),'k');
+hold off
+
+figure;
+hold on;
+axis([0,30,-2,2])
+plot(t_range,E_list,"k");
+xlabel("time (s)")
+ylabel("Mechanical Energy (Joules)")
+yyaxis right
+ylabel("Angular Momentum (kgm^2/s)")
+ylim([-2,2])
+plot(t_range,H_list);
+title("Conservation of Mechanical Energy and Angular Momentum")
 hold off
 
 %% Heun's method
@@ -358,24 +372,4 @@ function [num_steps, h] = iteration_solver(tspan, h_ref)
     num_steps = range/h_ref;%The number of steps is the range devided by goal h 
     num_steps = ceil(num_steps);%Round the number of steps up (to get a real number)
     h = range/num_steps; % Divide range by steps to get real h
-end
-%% Universal Gravitation rate func
-%Rate function describing Newton’s law of gravitation
-%INPUTS:
-%t: the current time
-%V: the vector of the position and velocity of the planet
-% V = [x_p; y_p; dxdt_p; dydt_p]
-%orbit_params: a struct describing the system parameters
-% orbit_params.m_sun is the mass of the sun
-% orbit_params.m_planet is the mass of the planet
-% orbit_params.G is the gravitational constant
-%OUTPUTS:
-%dVdt: a column vector describing the time derivative of V:
-% dVdt = [dxdt_p; dydt_p; d2xdt2_p; d2ydt2_p]
-function dVdt = gravity_rate_func(t,V,orbit_params)
-    dVdt = zeros(4,1);
-    dVdt(1) = V(3, t);
-    dVdt(2) = V(4, t);
-    dVdt(3) = -orbit_params.m_sun*orbit_params.G*V(1, t)/(abs(V(1, t))^3);
-    dVdt(4) = -orbit_params.m_sun*orbit_params.G*V(2, t)/(abs(V(2, t))^3);
 end
