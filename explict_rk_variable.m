@@ -42,6 +42,7 @@ for error_desired = desired_error_range
     [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
     (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error_desired);
 end
+plot(t_list, X_list)
 
 %% LOCAL ERROR
 h_list = logspace(-5,1,100); 
@@ -128,6 +129,7 @@ function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable
             num_failed_steps = num_failed_steps + 1;
             [XB, num_evals_temp, h_next, redo] = explicit_RK_variable_step...
             (rate_func_in,t,XA,h_test(end),BT_struct,p,error_desired);
+            h_next = sum(h_next); % JANKY NOT RIGHT GET RID OF ASAP (but fixes inf loop temporarily)
             h_test = [h_test, h_next]; %add the next predicted h to the loop
         end
         num_failed_steps = num_failed_steps - 1;
@@ -173,11 +175,11 @@ end
 function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
     alpha = 4; % btwn 1.5 and 10, inclusive
-    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct) %run 1 step of the solver (on original ts)
+    [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
     h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha); % calculate h_next
     XB = XB1;
-    estimated_error = abs(XB1 - XB2)% calculate error
-    redo = error_desired<estimated_error
+    estimated_error = abs(XB1 - XB2);% calculate error
+    redo = error_desired<estimated_error;
 end
 %% RK_step_embedded
 %This function computes the value of X at the next time step
