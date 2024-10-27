@@ -48,13 +48,13 @@ hold off
 figure;
 hold on;
 axis([0,30,-2,2])
-plot(t_range,E_list,"k");
+plot(t_range,E_list,"k", "LineWidth", 2);
 xlabel("time (s)")
 ylabel("Mechanical Energy (Joules)")
 yyaxis right
 ylabel("Angular Momentum (kgm^2/s)")
 ylim([-2,2])
-plot(t_range,H_list);
+plot(t_range,H_list, "LineWidth", 2);
 title("Conservation of Mechanical Energy and Angular Momentum")
 hold off
 
@@ -80,6 +80,8 @@ figure;
 plot(t_list_heun,X_list_heun, 'b', 'LineWidth', 2);
 hold on;
 plot(t_list_heun,solution01(t_list_heun), '--r', 'LineWidth', 2)
+xlabel("t (sec)")
+ylabel("X")
 title("Heun's Method Approximated Solution")
 legend("Heun's Method", "True Solution")
 
@@ -163,6 +165,8 @@ plot(t_list_ralston,X_list_ralston, 'b', 'LineWidth', 2);
 hold on;
 plot(t_list_ralston,solution01(t_list_ralston), '--r', 'LineWidth', 2)
 title("Ralston's Third-Order Method Approximated Solution")
+xlabel("t (sec)")
+ylabel("X")
 legend("Ralston's Third-Order Method", "True Solution")
 
 % LOCAL
@@ -244,6 +248,8 @@ plot(t_list_eighth,X_list_eighth, 'b', 'LineWidth', 2);
 hold on;
 plot(t_list_eighth,solution01(t_list_eighth), '--r', 'LineWidth', 2)
 title("3/8-Rule Fourth-Order Approximated Solution")
+xlabel("t (sec)")
+ylabel("X")
 legend("3/8-Rule Fourth-Order", "True Solution")
 
 % LOCAL
