@@ -23,7 +23,7 @@ h_ref = 0.05;
 [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (@rate_func01,t,XA,h,DormandPrince,p,error_desired);
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
-(@rate_func01,tspan,X0,h_ref,DormandPrince,p,error_desired)
+(@rate_func01,tspan,X0,h_ref,DormandPrince,p,error_desired);
 
 %%
 desired_error_range = linspace(0.01,0.1,11);
@@ -178,7 +178,7 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
     alpha = 4; % btwn 1.5 and 10, inclusive
     [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
-    h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha) % calculate h_next
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha); % calculate h_next
     XB = XB1;
     estimated_error = abs(XB1 - XB2);% calculate error
     redo = error_desired<estimated_error;
