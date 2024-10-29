@@ -25,16 +25,14 @@ h_ref = 0.05;
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
 (@rate_func01,tspan,X0,h_ref,DormandPrince,p,error_desired);
 
-%% testing integrator
+%%
 desired_error_range = linspace(0.01,0.1,11);
 x0 = 6;
 y0 = 10;
 dxdt0 = 0;
 dydt0 = 1.5;
 h=0.03;
-h_ref = 0.0001;
 V0 = [x0;y0;dxdt0;dydt0];
-tspan = [0, 20];
 orbit_params = struct();
 orbit_params.m_sun = 1;
 orbit_params.m_planet = 1;
@@ -43,10 +41,9 @@ my_rate_func = @(t_in,V_in) gravity_rate_func(t_in,V_in,orbit_params);
 
 for error_desired = desired_error_range
     [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
-    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error_desired)
+    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error_desired);
 end
-figure()
-plot(X_list(1,:), X_list(2,:))
+plot(t_list, X_list)
 %%
 filterparams.min_xval = 0;
 filterparams.max_xval = 0.1;
@@ -57,32 +54,28 @@ X_true = [];
 results_matrix = zeros(length(h_list), 6);
 tf = tspan(end);
 X_list = [];
-%for i = 1:length(h_list)
-   %h_ref = h_list(i);
-   h_ref = 0.03;
-   for j = 1:length(V0)
+for i = 1:length(h_list)
+   h_ref = h_list(i);
    [t_list,X_list_temp,h_avg,num_evals_heun] = explicit_RK_variable_step_integration ...
-   (@rate_func01,tspan,V0(j),h_ref,DormandPrince,p,error_desired);
+   (@rate_func01,tspan,V0(i),h_ref,DormandPrince,p,error_desired);
    
    X_list = [X_list; X_list_temp(end)];
+
+
+
+
+end
    X_numerical = X_list(end, :)';
    X_analytical = gravity_rate_func(tf,V0,orbit_params);
    global_error = [global_error, norm(X_numerical - X_analytical)];
    rate_function_calls = [rate_function_calls, num_evals_heun];
 
-
-   end
-
-%end
-
-
-
-%[p_heun_step,k_heun_step] = loglog_fit(h_list,global_error, filterparams);
-%[p_heun,k_heun] = loglog_fit(rate_function_calls,global_error, filterparams);
+[p_heun,k_heun] = loglog_fit(rate_function_calls,global_error, filterparams);
+[p_heun_step,k_heun_step] = loglog_fit(h_list,global_error, filterparams);
 
 figure(3);
 loglog(h_list, num_evals_heun);
-%loglog(rate_function_calls, k_heun*rate_function_calls.^p_heun, 'r--', 'LineWidth', 1.5);
+loglog(rate_function_calls, k_heun*rate_function_calls.^p_heun, 'r--', 'LineWidth', 1.5);
 
 %% LOCAL ERROR
 h_list = logspace(-5,1,100); 
@@ -169,7 +162,7 @@ function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable
             while redo == 1
                 num_failed_steps = num_failed_steps + 1;
                 [XB, num_evals_temp, h_next, redo] = explicit_RK_variable_step...
-                (rate_func_in,t,XA,h_test(end),BT_struct,p,error_desired);
+                (rate_func_in,t,XA,h_test(end-1),BT_struct,p,error_desired);
                 h_test = [h_test, h_next]; %add the next predicted h to the loop
             end
         %end
@@ -189,8 +182,27 @@ function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable
         redo = 1;
         num_evals = num_evals + num_evals_temp;
     end
-    percent_failed = num_failed_steps/num_evals;
+    percent_failed = num_failed_steps/(num_evals);
     h_avg = mean(h_list);
+
+%     % calculate steps and h
+%     [num_steps, h_avg] = iteration_solver(tspan, h_ref);
+%     % define variables
+%     XA = X0;
+%     num_evals = 0;
+%     t_list = linspace(tspan(1),tspan(2),num_steps+1);
+%  
+%     X_list = zeros(num_steps+1,length(X0));
+%     X_list(1,:) = X0';
+%     %calculate the values until it is just short of the end value
+%     for i = 1:num_steps
+%         t = t_list(i);
+%         [XB, temp_eval] = explicit_RK_step(rate_func_in,t,XA,h_avg,BT_struct);
+%         num_evals = num_evals + temp_eval;
+% 
+%         X_list(i+1,:)= XB;
+%         XA = XB;
+%     end  
 end
 
 %% RK Variable Step
@@ -198,7 +210,7 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
     alpha = 4; % btwn 1.5 and 10, inclusive
     [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
-    h_next = h*min(0.9*(error_desired/norm(XB1-XB2))^(1/p),alpha); % calculate h_next
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha); % calculate h_next
     XB = XB1;
     estimated_error = abs(XB1 - XB2);% calculate error
     redo = error_desired<estimated_error;

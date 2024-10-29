@@ -26,7 +26,7 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
     alpha = 1.5; % btwn 1.5 and 10, inclusive
     [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct);
-    h_next = h*min(0.9*(error_desired/abs(XB1-XB2))^(1/p),alpha);
+    h_next = h*min(0.9*(error_desired/norm(XB1-XB2))^(1/p),alpha);
     XB = XB1;
     X_analytical = rate_func_in(t_ref+h_ref,XB);
     estimated_error = norm(XB - X_analytical);
