@@ -80,8 +80,8 @@ X_list = [];
 %[p_heun_step,k_heun_step] = loglog_fit(h_list,global_error, filterparams);
 %[p_heun,k_heun] = loglog_fit(rate_function_calls,global_error, filterparams);
 
-figure(3);
-loglog(h_list, num_evals_heun);
+% figure(3);
+% loglog(h_list, num_evals_heun);
 %loglog(rate_function_calls, k_heun*rate_function_calls.^p_heun, 'r--', 'LineWidth', 1.5);
 
 %% LOCAL ERROR
