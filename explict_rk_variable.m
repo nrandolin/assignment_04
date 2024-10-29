@@ -19,7 +19,7 @@ p = 3;
 error_desired = 0.05;
 tspan = [0, 2];
 X0 = XA;
-h_ref = 0.01;
+h_ref = 0.05;
 [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (@rate_func01,t,XA,h,DormandPrince,p,error_desired);
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
@@ -31,6 +31,7 @@ x0 = 6;
 y0 = 10;
 dxdt0 = 0;
 dydt0 = 1.5;
+h=0.03;
 V0 = [x0;y0;dxdt0;dydt0];
 orbit_params = struct();
 orbit_params.m_sun = 1;
@@ -125,13 +126,14 @@ function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable
     % probably need a for loop for iterating through time, not sure how to
     % do this with varying step size
     while t ~= tspan(2)
-        while redo == 1
-            num_failed_steps = num_failed_steps + 1;
-            [XB, num_evals_temp, h_next, redo] = explicit_RK_variable_step...
-            (rate_func_in,t,XA,h_test(end),BT_struct,p,error_desired);
-            h_next = sum(h_next); % JANKY NOT RIGHT GET RID OF ASAP (but fixes inf loop temporarily)
-            h_test = [h_test, h_next]; %add the next predicted h to the loop
-        end
+        %for i = 1:length(XA)
+            while redo == 1
+                num_failed_steps = num_failed_steps + 1;
+                [XB, num_evals_temp, h_next, redo] = explicit_RK_variable_step...
+                (rate_func_in,t,XA,h_test(end-1),BT_struct,p,error_desired);
+                h_test = [h_test, h_next]; %add the next predicted h to the loop
+            end
+        %end
         num_failed_steps = num_failed_steps - 1;
         h = h_test(end-1);  % the actual h used was one less than the one now
         t_temp = t+h;
@@ -176,7 +178,7 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
 (rate_func_in,t,XA,h,BT_struct,p,error_desired)
     alpha = 4; % btwn 1.5 and 10, inclusive
     [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
-    h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha); % calculate h_next
+    h_next = h*min(0.9*(error_desired/abs(XB1-XB2)).^(1/p),alpha) % calculate h_next
     XB = XB1;
     estimated_error = abs(XB1 - XB2);% calculate error
     redo = error_desired<estimated_error;

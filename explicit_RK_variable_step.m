@@ -31,4 +31,5 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
     X_analytical = rate_func_in(t_ref+h_ref,XB);
     estimated_error = norm(XB - X_analytical);
     redo = error_desired<estimated_error;
+    error_desired-estimated_error
 end
