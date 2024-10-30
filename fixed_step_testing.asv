@@ -14,7 +14,7 @@ DormandPrince.A = [0,0,0,0,0,0,0;
 t = 2;
 t_list = linspace(0,0.5,100);
 
-h = 0.1;
+h = 0.001;
 t0 = 0;          % Start time
 tf = 40;        % End time (replace with the desired final time)
 
@@ -33,15 +33,81 @@ my_rate_func = @(t_in,V_in) gravity_rate_func(t_in,V_in,orbit_params);
 
 V0 = [x0;y0;dxdt0;dydt0];
 t_range = linspace(0,40,500);
-XA = compute_planetary_motion(t_range,V0,orbit_params);
+X_list_true = compute_planetary_motion(t_range,V0,orbit_params);
+
+
 
 %[XB, num_evals] = explicit_RK_step(@rate_func01,t,XA,h,BT_struct);
 
 [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
 (my_rate_func,tspan,V0,h,DormandPrince);
 figure()
-plot(X_list(1, :), X_list(2, :), 'r')
-X_list
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list(:,1), X_list(:,2), 'r--','linewidth',2)
+
+%% Heun's Method
+heun_struct.A = [0, 0; 1, 0];
+heun_struct.B = [0.5, 0.5];
+heun_struct.C = [0; 1];
+h = 0.001;
+t0 = 0;          % Start time
+tf = 40;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+
+[t_list_heun,X_list_heun,h_avg_heun, num_evals_heun] = explicit_RK_fixed_step_integration ...
+(my_rate_func,tspan,V0,h,heun_struct);
+
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list_heun(:,1), X_list_heun(:,2), 'r--','linewidth',2)
+xlabel("X")
+ylabel("Y")
+title("Heun's Method Approximated Solution")
+legend("Heun's Method", "True Solution")
+
+%% Ralston's Method - Third Order
+ralston_struct.A = [0, 0, 0; 0.5, 0, 0; 0, 0.75, 0];
+ralston_struct.B = [2/9, 1/3, 4/9];
+ralston_struct.C = [0; 0/5; 0.75];
+h = 0.001;
+t0 = 0;          % Start time
+tf = 40;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+
+[t_list_ralston,X_list_ralston,h_avg_ralston, num_evals_ralston] = explicit_RK_fixed_step_integration ...
+(my_rate_func,tspan,V0,h,ralston_struct);
+
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list_ralston(:,1), X_list_ralston(:,2), 'r--','linewidth',2)
+xlabel("X")
+ylabel("Y")
+title("Ralston's Method Approximated Solution")
+legend("Ralston's Method", "True Solution")
+
+%% 3/8-Rule - Fourth Order
+struct_38.A = [0, 0, 0, 0; 1/3, 0, 0, 0; -1/3, 1, 0, 0; 1, -1, 1, 0];
+struct_38.B = [1/8, 3/8, 3/8, 1/8];
+struct_38.C = [0; 1/3; 2/3; 1];
+h = 0.001;
+t0 = 0;          % Start time
+tf = 40;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+XA = solution01(t0);
+[t_list_38,X_list_38,h_avg_38, num_evals_38] = explicit_RK_fixed_step_integration ...
+(my_rate_func,tspan,V0,h,struct_38);
+
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list_38(:,1), X_list_38(:,2), 'r--','linewidth',2)
+xlabel("t (sec)")
+ylabel("X")
+title("3/8-Rule Method Approximated Solution")
+legend("3/8-Rule Method", "True Solution")
 
 %% explicit_RK fixed_step integrator
 %Runs numerical integration arbitrary RK method
@@ -77,7 +143,7 @@ function [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration .
         [XB, temp_eval] = explicit_RK_step(rate_func_in,t,XA,h_avg,BT_struct);
         num_evals = num_evals + temp_eval;
 
-        X_list(i+1,:)= XB;
+        X_list(i+1,:)= XB';
         XA = XB;
     end  
 end
@@ -118,8 +184,8 @@ X = cos(t);
 end
 %% ITERATION SOLVER
 function [num_steps, h] = iteration_solver(tspan, h_ref)
-    range = tspan(2)-tspan(1);
-    num_steps = range/h_ref;%The number of steps is the range devided by goal h 
+    t_range = tspan(2)-tspan(1);
+    num_steps = t_range/h_ref;%The number of steps is the range devided by goal h 
     num_steps = ceil(num_steps);%Round the number of steps up (to get a real number)
-    h = range/num_steps; % Divide range by steps to get real h
+    h = t_range/num_steps; % Divide range by steps to get real h
 end

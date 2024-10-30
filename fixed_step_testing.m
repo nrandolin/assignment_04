@@ -45,7 +45,69 @@ figure()
 hold on
 plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
 plot(X_list(:,1), X_list(:,2), 'r--','linewidth',2)
-X_list
+
+%% Heun's Method
+heun_struct.A = [0, 0; 1, 0];
+heun_struct.B = [0.5, 0.5];
+heun_struct.C = [0; 1];
+h = 0.001;
+t0 = 0;          % Start time
+tf = 40;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+
+[t_list_heun,X_list_heun,h_avg_heun, num_evals_heun] = explicit_RK_fixed_step_integration ...
+(my_rate_func,tspan,V0,h,heun_struct);
+
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list_heun(:,1), X_list_heun(:,2), 'r--','linewidth',2)
+xlabel("X")
+ylabel("Y")
+title("Heun's Method Approximated Solution")
+legend("Heun's Method", "True Solution")
+
+%% Ralston's Method - Third Order
+ralston_struct.A = [0, 0, 0; 0.5, 0, 0; 0, 0.75, 0];
+ralston_struct.B = [2/9, 1/3, 4/9];
+ralston_struct.C = [0; 0/5; 0.75];
+h = 0.001;
+t0 = 0;          % Start time
+tf = 40;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+
+[t_list_ralston,X_list_ralston,h_avg_ralston, num_evals_ralston] = explicit_RK_fixed_step_integration ...
+(my_rate_func,tspan,V0,h,ralston_struct);
+
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list_ralston(:,1), X_list_ralston(:,2), 'r--','linewidth',2)
+xlabel("X")
+ylabel("Y")
+title("Ralston's Method Approximated Solution")
+legend("Ralston's Method", "True Solution")
+
+%% 3/8-Rule - Fourth Order
+struct_38.A = [0, 0, 0, 0; 1/3, 0, 0, 0; -1/3, 1, 0, 0; 1, -1, 1, 0];
+struct_38.B = [1/8, 3/8, 3/8, 1/8];
+struct_38.C = [0; 1/3; 2/3; 1];
+h = 0.001;
+t0 = 0;          % Start time
+tf = 40;        % End time (replace with the desired final time)
+tspan = [t0, tf];  % Full integration interval  
+
+[t_list_38,X_list_38,h_avg_38, num_evals_38] = explicit_RK_fixed_step_integration ...
+(my_rate_func,tspan,V0,h,struct_38);
+
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list_38(:,1), X_list_38(:,2), 'r--','linewidth',2)
+xlabel("t (sec)")
+ylabel("X")
+title("3/8-Rule Method Approximated Solution")
+legend("3/8-Rule Method", "True Solution")
 
 %% explicit_RK fixed_step integrator
 %Runs numerical integration arbitrary RK method
