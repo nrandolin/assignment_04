@@ -32,9 +32,9 @@ y0 = 10;
 dxdt0 = 0;
 dydt0 = 1.5;
 h=0.03;
-h_ref = 0.0001;
+h_ref = 0.001;
 V0 = [x0;y0;dxdt0;dydt0];
-tspan = [0, 20];
+tspan = [0, 40];
 orbit_params = struct();
 orbit_params.m_sun = 1;
 orbit_params.m_planet = 1;
@@ -173,7 +173,9 @@ function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable
                 h_test = [h_test, h_next]; %add the next predicted h to the loop
             end
         %end
-        num_failed_steps = num_failed_steps - 1;
+        if num_failed_steps > 0
+            num_failed_steps = num_failed_steps - 1; 
+        end
         h = h_test(end-1);  % the actual h used was one less than the one now
         t_temp = t+h;
         % end early?

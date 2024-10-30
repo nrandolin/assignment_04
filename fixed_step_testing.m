@@ -67,6 +67,34 @@ ylabel("Y")
 title("Heun's Method Approximated Solution")
 legend("Heun's Method", "True Solution")
 
+% Local Error Calculations
+h_list = logspace(-5,1,100); 
+
+local_error_heun = [];
+X_true = [];
+difference = [];
+
+t_ref = 4.49;
+XA = compute_planetary_motion(t_ref, V0, orbit_params);
+
+for i = 1:length(h_list)
+   h_ref = h_list(i);
+   [XB_heun,~] = explicit_RK_step(my_rate_func,t_ref,XA,h_ref,heun_struct);
+
+   X_analytical = compute_planetary_motion(t_ref+h_ref, V0, orbit_params);
+    
+   X_true = [X_true, X_analytical];
+   local_error_heun = [local_error_heun, norm(XB_heun - X_analytical)];
+   difference = [difference, norm(X_analytical-compute_planetary_motion(t_ref, V0, orbit_params))];
+
+end
+figure();
+loglog(h_list, local_error_heun, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'r', 'LineWidth', 2)
+title("Local Error Heun's Method")
+legend("Heun Method's", "Difference")
+
 %% Ralston's Method - Third Order
 ralston_struct.A = [0, 0, 0; 0.5, 0, 0; 0, 0.75, 0];
 ralston_struct.B = [2/9, 1/3, 4/9];
@@ -88,6 +116,35 @@ ylabel("Y")
 title("Ralston's Method Approximated Solution")
 legend("Ralston's Method", "True Solution")
 
+% Local Error Calculations
+h_list = logspace(-5,1,100); 
+
+local_error_ralston = [];
+X_true = [];
+difference = [];
+
+t_ref = 4.49;
+XA = compute_planetary_motion(t_ref, V0, orbit_params);
+
+for i = 1:length(h_list)
+   h_ref = h_list(i);
+    
+   [XB_ralston,~] = explicit_RK_step(my_rate_func,t_ref,V0,h_ref,ralston_struct);
+
+   X_analytical = compute_planetary_motion(t_ref+h_ref, V0, orbit_params);
+    
+   X_true = [X_true, X_analytical];
+   local_error_ralston = [local_error_ralston, norm(XB_ralston - X_analytical)];
+   difference = [difference, norm(X_analytical-compute_planetary_motion(t_ref, V0, orbit_params))];
+
+end
+
+figure;
+loglog(h_list, local_error_ralston, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'r', 'LineWidth', 2)
+title("Local Error Ralston Method")
+legend("Ralston Method", "Difference")
 %% 3/8-Rule - Fourth Order
 struct_38.A = [0, 0, 0, 0; 1/3, 0, 0, 0; -1/3, 1, 0, 0; 1, -1, 1, 0];
 struct_38.B = [1/8, 3/8, 3/8, 1/8];
@@ -108,6 +165,51 @@ xlabel("t (sec)")
 ylabel("X")
 title("3/8-Rule Method Approximated Solution")
 legend("3/8-Rule Method", "True Solution")
+
+% Local Error Calculations
+h_list = logspace(-5,1,100); 
+
+local_error_eighth = [];
+X_true = [];
+difference = [];
+
+t_ref = 4.49;
+XA = compute_planetary_motion(t_ref, V0, orbit_params);
+
+for i = 1:length(h_list)
+   h_ref = h_list(i);
+    
+   [XB_eighth,~] = explicit_RK_step(my_rate_func,t_ref,XA,h_ref,struct_38);
+
+   X_analytical = compute_planetary_motion(t_ref+h_ref, V0, orbit_params);
+    
+   X_true = [X_true, X_analytical];
+   local_error_eighth = [local_error_eighth, norm(XB_eighth - X_analytical)];
+   difference = [difference, norm(X_analytical-compute_planetary_motion(t_ref, V0, orbit_params))];
+
+end
+
+
+figure;
+loglog(h_list, local_error_eighth, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'r', 'LineWidth', 2)
+title("Local Error 3/8-Rule Method")
+legend("3/8-Rule Method", "Difference")
+
+%% LOCAL PLOT
+figure;
+loglog(h_list, local_error_heun, 'b', 'LineWidth', 2);
+hold on
+loglog(h_list, local_error_ralston, 'g', 'LineWidth', 2);
+hold on
+loglog(h_list, local_error_eighth, 'r', 'LineWidth', 2);
+hold on
+loglog(h_list, difference, 'm', 'LineWidth', 2)
+title("Local Error Method Comparison")
+xlabel("Step Size")
+ylabel("Local Error")
+legend("Heun's Method", "Ralston's Method", "3/8-Rule Method", "Difference")
 
 %% explicit_RK fixed_step integrator
 %Runs numerical integration arbitrary RK method
