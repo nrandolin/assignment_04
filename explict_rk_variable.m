@@ -66,7 +66,7 @@ X_list = [];
    
    X_list = [X_list; X_list_temp(end)];
    X_numerical = X_list(end, :)';
-   X_analytical = gravity_rate_func(tf,V0,orbit_params);
+   X_analytical = compute_planetary_motion(tf,V0,orbit_params);
    global_error = [global_error, norm(X_numerical - X_analytical)];
    rate_function_calls = [rate_function_calls, num_evals_heun];
 
