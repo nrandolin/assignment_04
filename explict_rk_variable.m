@@ -173,9 +173,10 @@ function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable
                 h_test = [h_test, h_next]; %add the next predicted h to the loop
             end
         %end
-        if num_failed_steps > 0
-            num_failed_steps = num_failed_steps - 1; 
-        end
+        % Not sure if we want this because it seems to make failure = 0%
+%         if num_failed_steps > 0
+%             num_failed_steps = num_failed_steps - 1; 
+%         end
         h = h_test(end-1);  % the actual h used was one less than the one now
         t_temp = t+h;
         % end early?
@@ -202,7 +203,7 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
     [XB1, XB2, num_evals] = RK_step_embedded(rate_func_in,t,XA,h,BT_struct); %run 1 step of the solver (on original ts)
     h_next = h*min(0.9*(error_desired/norm(XB1-XB2))^(1/p),alpha); % calculate h_next
     XB = XB1;
-    estimated_error = abs(XB1 - XB2);% calculate error
+    estimated_error = abs(XB1 - XB2); % calculate error
     redo = error_desired<estimated_error;
 end
 %% RK_step_embedded
