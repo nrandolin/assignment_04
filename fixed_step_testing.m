@@ -14,7 +14,7 @@ DormandPrince.A = [0,0,0,0,0,0,0;
 t = 2;
 t_list = linspace(0,0.5,100);
 
-h = 0.001;
+
 t0 = 0;          % Start time
 tf = 40;        % End time (replace with the desired final time)
 
@@ -38,9 +38,12 @@ X_list_true = compute_planetary_motion(t_range,V0,orbit_params);
 
 
 %[XB, num_evals] = explicit_RK_step(@rate_func01,t,XA,h,BT_struct);
-
+h = 0.067;
 [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
-(my_rate_func,tspan,V0,h,DormandPrince);
+(my_rate_func,tspan,V0,h,DormandPrince)
+X_numerical = X_list(end, :)'
+X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params)
+global_error = norm(X_numerical - X_analytical)
 figure()
 hold on
 plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
