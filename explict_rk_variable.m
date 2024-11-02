@@ -50,26 +50,77 @@ num_evals_list = [];
 for i = 1:length(error_list)
     error = error_list(i);
     [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
-    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error)
+    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error);
     X_numerical = X_list(:, end);
     X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params);
     global_error = norm(X_numerical - X_analytical);
     global_error_list = [global_error_list, global_error];
     h_avg_list = [h_avg_list, h_avg];
     percent_failed_list = [percent_failed_list, percent_failed];
-    num_evals_list = [num_evals_list, num_evals]
+    num_evals_list = [num_evals_list, num_evals];
 end
 figure()
-plot(h_avg_list, percent_failed_list, '.g')
+plot(h_avg_list, percent_failed_list, '.m', 'MarkerSize', 10)
 set(gca, 'XScale', 'log')
+title("Percent Failed vs. Average Step Size")
 figure()
-loglog(h_avg_list, global_error_list, '.r')
+loglog(h_avg_list, global_error_list, '.r', 'MarkerSize', 10)
+title("Global Error vs. Average Step Size")
 figure()
-loglog(num_evals_list, global_error_list, '.b', 'LineWidth', 2)
+loglog(h_avg_list, global_error_list, 'r', 'LineWidth', 2)
+title("Global Error vs. Average Step Size")
+figure()
+loglog(num_evals_list, global_error_list, '.b', 'MarkerSize', 10)
+title("Global Error vs. Number of Evaluations")
 
 
 %figure()
 %plot(X_list(1,:), X_list(2,:))
+
+%% Velocity and Position
+tspan = [0, 40];
+
+[t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
+        (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
+
+% position vs. time
+figure()
+plot(t_list, X_list(1,:), 'bo-','markerfacecolor','k','markeredgecolor','k','markersize',2)
+hold on
+plot(t_list, X_list(2,:), 'ro-','markerfacecolor','k','markeredgecolor','k','markersize',2)
+title('Position vs. Time')
+legend('x', 'y')
+xlabel('Time (s)')
+ylabel('Position (m)')
+
+% velocity vs. time
+figure()
+plot(t_list, X_list(3,:), 'bo-','markerfacecolor','k','markeredgecolor','k','markersize',2)
+hold on
+plot(t_list, X_list(4,:), 'ro-','markerfacecolor','k','markeredgecolor','k','markersize',2)
+title('Velocity vs. Time')
+legend('x', 'y')
+xlabel('Time (s)')
+ylabel('Velocity (m/s)')
+
+%% step size vs distance
+tspan = [0, 40];
+
+[t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
+        (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
+
+h_list = [diff(t_list)]
+radius = sqrt(X_list(1,:).^2 + X_list(2,:).^2);
+radius(1) = []
+
+figure()
+scatter(radius, h_list, 'ob')
+title("Step Size vs. Distance from Planet to Sun")
+ylabel("Step Size (s)")
+xlabel("Distance (m)")
+
+
+
 %%
 filterparams.min_xval = 0;
 filterparams.max_xval = 0.1;
@@ -168,7 +219,7 @@ xlabel("|XB1-XB2|")
 %error_desired: the desired local truncation error at each step
 %OUTPUTS:
 %t_list: the vector of times, [t_start;t_1;t_2;...;.t_end] that X is approximated at
-%X_list: the vector of X, [X0’;X1’;X2’;...;(X_end)’] at each time step
+%X_list: the vector of X, [X0';X1';X2';...;(X_end)'] at each time step
 %h_avg: the average step size
 %num_evals: total number of calls made to rate_func_in during the integration
 function [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
