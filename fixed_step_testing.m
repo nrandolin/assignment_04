@@ -35,19 +35,45 @@ V0 = [x0;y0;dxdt0;dydt0];
 t_range = linspace(0,40,500);
 X_list_true = compute_planetary_motion(t_range,V0,orbit_params);
 
-
+h_list = linspace(0.001, 0.12, 100);
 
 %[XB, num_evals] = explicit_RK_step(@rate_func01,t,XA,h,BT_struct);
-h = 0.067;
-[t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
-(my_rate_func,tspan,V0,h,DormandPrince)
-X_numerical = X_list(end, :)'
-X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params)
-global_error = norm(X_numerical - X_analytical)
+global_error_list = [];
+h_avg_list = [];
+num_evals_list = [];
+for i = 1:length(h_list)
+    h = h_list(i);
+    [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
+    (my_rate_func,tspan,V0,h,DormandPrince);
+    X_numerical = X_list(end, :)';
+    X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params);
+    global_error = norm(X_numerical - X_analytical);
+    global_error_list = [global_error_list, global_error];
+    h_avg_list = [h_avg_list, h_avg];
+    num_evals_list = [num_evals_list, num_evals];
+end
+
+% plot planet trajectory
 figure()
 hold on
 plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
 plot(X_list(:,1), X_list(:,2), 'r--','linewidth',2)
+title("Approximated vs. True Planet Trajectory")
+legend("True Solution", "Approximated Solution")
+
+% global error vs. avg step size
+figure()
+loglog(h_avg_list, global_error_list, 'b', 'LineWidth', 2)
+title("Global Error vs. Average Step Size - Fixed Step")
+xlabel("Average Step Size")
+ylabel("Global Error")
+
+% global error vs. num evals
+figure()
+loglog(num_evals_list, global_error_list, 'b', 'LineWidth', 2)
+title("Global Error vs. Number of Evaluations - Fixed Step")
+xlabel("Number of Evaluations")
+ylabel("Global Error")
 
 %% Heun's Method
 heun_struct.A = [0, 0; 1, 0];

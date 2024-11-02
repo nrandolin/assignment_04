@@ -45,18 +45,27 @@ h_list = linspace(0.001, 0.15, 100);
 error_list = linspace(0.0001, 0.1, 100);
 h_avg_list = [];
 global_error_list = [];
+percent_failed_list = [];
+num_evals_list = [];
 for i = 1:length(error_list)
     error = error_list(i);
     [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
-    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error);
+    (my_rate_func,tspan,V0,h_ref,DormandPrince,p,error)
     X_numerical = X_list(:, end);
     X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params);
     global_error = norm(X_numerical - X_analytical);
     global_error_list = [global_error_list, global_error];
     h_avg_list = [h_avg_list, h_avg];
+    percent_failed_list = [percent_failed_list, percent_failed];
+    num_evals_list = [num_evals_list, num_evals]
 end
 figure()
-loglog(h_avg_list, global_error_list)
+plot(h_avg_list, percent_failed_list, '.g')
+set(gca, 'XScale', 'log')
+figure()
+loglog(h_avg_list, global_error_list, '.r')
+figure()
+loglog(num_evals_list, global_error_list, '.b', 'LineWidth', 2)
 
 
 %figure()
