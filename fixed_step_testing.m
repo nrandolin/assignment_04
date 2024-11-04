@@ -48,9 +48,9 @@ for i = 1:length(h_list)
     X_numerical = X_list(end, :)';
     X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params);
     global_error = norm(X_numerical - X_analytical);
-    global_error_list = [global_error_list, global_error];
-    h_avg_list = [h_avg_list, h_avg];
-    num_evals_list = [num_evals_list, num_evals];
+    global_error_list_fixed = [global_error_list, global_error];
+    h_avg_list_fixed = [h_avg_list, h_avg];
+    num_evals_list_fixed = [num_evals_list, num_evals];
 end
 
 % plot planet trajectory
@@ -63,14 +63,14 @@ legend("True Solution", "Approximated Solution")
 
 % global error vs. avg step size
 figure()
-loglog(h_avg_list, global_error_list, 'b', 'LineWidth', 2)
+loglog(h_avg_list_fixed, global_error_list_fixed, 'b', 'LineWidth', 2)
 title("Global Error vs. Average Step Size - Fixed Step")
 xlabel("Average Step Size")
 ylabel("Global Error")
 
 % global error vs. num evals
 figure()
-loglog(num_evals_list, global_error_list, 'b', 'LineWidth', 2)
+loglog(num_evals_list_fixed, global_error_list_fixed, 'b', 'LineWidth', 2)
 title("Global Error vs. Number of Evaluations - Fixed Step")
 xlabel("Number of Evaluations")
 ylabel("Global Error")

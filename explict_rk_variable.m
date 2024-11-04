@@ -42,7 +42,7 @@ orbit_params.m_planet = 1;
 orbit_params.G = 40;
 my_rate_func = @(t_in,V_in) gravity_rate_func(t_in,V_in,orbit_params);
 h_list = linspace(0.001, 0.15, 100);
-error_list = linspace(0.0001, 0.1, 100);
+error_list = logspace(-12, -1, 100);
 h_avg_list = [];
 global_error_list = [];
 percent_failed_list = [];
@@ -59,26 +59,69 @@ for i = 1:length(error_list)
     percent_failed_list = [percent_failed_list, percent_failed];
     num_evals_list = [num_evals_list, num_evals];
 end
+V0 = [x0;y0;dxdt0;dydt0];
+t_range = linspace(0,40,500);
+X_list_true = compute_planetary_motion(t_range,V0,orbit_params);
+
+h_list = linspace(0.001, 0.12, 100);
+DormandPrince.B = [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0];
+%[XB, num_evals] = explicit_RK_step(@rate_func01,t,XA,h,BT_struct);
+global_error_list_fixed = [];
+h_avg_list_fixed = [];
+num_evals_list_fixed = [];
+for i = 1:length(h_list)
+    h = h_list(i);
+    [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
+    (my_rate_func,tspan,V0,h,DormandPrince);
+    X_numerical = X_list(end, :)';
+    X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params);
+    global_error = norm(X_numerical - X_analytical);
+    global_error_list_fixed = [global_error_list_fixed, global_error];
+    h_avg_list_fixed = [h_avg_list_fixed, h_avg];
+    num_evals_list_fixed = [num_evals_list_fixed, num_evals];
+end
+
+
+% global error vs. avg step size
 figure()
-plot(h_avg_list, percent_failed_list, '.m', 'MarkerSize', 10)
+loglog(h_avg_list_fixed, global_error_list_fixed, '.b', 'MarkerSize', 8)
+hold on
+loglog(h_avg_list, global_error_list, '.r', 'MarkerSize', 8)
+title("Global Error vs. Average Step Size")
+xlabel("Average Step Size")
+ylabel("Global Error")
+legend("Fixed Step", "Variable Step")
+
+% global error vs. num evals
+figure()
+loglog(num_evals_list_fixed, global_error_list_fixed, '.b', 'MarkerSize', 8)
+hold on
+loglog(num_evals_list, global_error_list, '.r', 'MarkerSize', 8)
+title("Global Error vs. Number of Evaluations")
+xlabel("Number of Evaluations")
+ylabel("Global Error")
+legend("Fixed Step", "Variable Step")
+
+figure()
+plot(h_avg_list, percent_failed_list, '.m', 'MarkerSize', 8)
 set(gca, 'XScale', 'log')
 title("Percent Failed vs. Average Step Size")
-figure()
-loglog(h_avg_list, global_error_list, '.r', 'MarkerSize', 10)
-title("Global Error vs. Average Step Size")
-figure()
-loglog(h_avg_list, global_error_list, 'r', 'LineWidth', 2)
-title("Global Error vs. Average Step Size")
-figure()
-loglog(num_evals_list, global_error_list, '.b', 'MarkerSize', 10)
-title("Global Error vs. Number of Evaluations")
+xlabel("Average Step Size")
+ylabel("Percent Failed")
 
 
-%figure()
-%plot(X_list(1,:), X_list(2,:))
+% plot planet trajectory
+figure()
+hold on
+plot(X_list_true(:,1), X_list_true(:,2),'b','linewidth',2) 
+plot(X_list(:,1), X_list(:,2), 'r--','linewidth',2)
+title("Approximated vs. True Planet Trajectory")
+legend("True Solution", "Approximated Solution")
 
 %% Velocity and Position
 tspan = [0, 40];
+DormandPrince.B = [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0;...
+5179/57600, 0, 7571/16695, 393/640, -92097/339200, 187/2100, 1/40];
 
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
         (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
@@ -104,14 +147,14 @@ xlabel('Time (s)')
 ylabel('Velocity (m/s)')
 
 %% step size vs distance
-tspan = [0, 40];
+tspan = [0, 50];
 
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
         (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
 
-h_list = [diff(t_list)]
+h_list = [diff(t_list)];
 radius = sqrt(X_list(1,:).^2 + X_list(2,:).^2);
-radius(1) = []
+radius(1) = [];
 
 figure()
 scatter(radius, h_list, 'ob')
@@ -350,4 +393,76 @@ end
 
 function X = solution01(t)
 X = cos(t);
+end
+%% explicit_RK fixed_step integrator
+%Runs numerical integration arbitrary RK method
+%INPUTS:
+%rate_func_in: the function used to compute dXdt. rate_func_in will
+% have the form: dXdt = rate_func_in(t,X) (t is before X)
+%tspan: a two element vector [t_start,t_end] that denotes the integration endpoints
+%X0: the vector describing the initial conditions, X(t_start)
+%h_ref: the desired value of the average step size (not the actual value)
+%BT_struct: a struct that contains the Butcher tableau
+% BT_struct.A: matrix of a_{ij} values
+% BT_struct.B: vector of b_i values
+% BT_struct.C: vector of c_i values
+%OUTPUTS:
+%t_list: the vector of times, [t_start;t_1;t_2;...;.t_end] that X is approximated at
+%X_list: the vector of X, [X0’;X1’;X2’;...;(X_end)’] at each time step
+%h_avg: the average step size
+%num_evals: total number of calls made to rate_func_in during the integration
+function [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
+(rate_func_in,tspan,X0,h_ref,BT_struct)
+    % calculate steps and h
+    [num_steps, h_avg] = iteration_solver(tspan, h_ref);
+    % define variables
+    XA = X0;
+    num_evals = 0;
+    t_list = linspace(tspan(1),tspan(2),num_steps+1);
+ 
+    X_list = zeros(num_steps+1,length(X0));
+    X_list(1,:) = X0';
+    %calculate the values until it is just short of the end value
+    for i = 1:num_steps
+        t = t_list(i);
+        [XB, temp_eval] = explicit_RK_step(rate_func_in,t,XA,h_avg,BT_struct);
+        num_evals = num_evals + temp_eval;
+
+        X_list(i+1,:)= XB';
+        XA = XB;
+    end  
+end
+
+%% explicit_RK_step
+%This function computes the value of X at the next time step
+%for any arbitrary RK method
+%INPUTS:
+%rate_func_in: the function used to compute dXdt. rate_func_in will
+% have the form: dXdt = rate_func_in(t,X) (t is before X)
+%t: the value of time at the current step
+%XA: the value of X(t)
+%h: the time increment for a single step i.e. delta_t = t_{n+1} - t_{n}
+%BT_struct: a struct that contains the Butcher tableau
+% BT_struct.A: matrix of a_{ij} values
+% BT_struct.B: vector of b_i values
+% BT_struct.C: vector of c_i values
+%OUTPUTS:
+%XB: the approximate value for X(t+h) (the next step)
+% formula depends on the integration method used
+%num_evals: A count of the number of times that you called
+% rate_func_in when computing the next step
+function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
+    k = zeros(length(XA),length(BT_struct.B));
+    for i = 1:length(BT_struct.B)
+        k(:,i) = rate_func_in(t+BT_struct.C(i)*h, XA+h*(k*BT_struct.A(i,:)'));
+    end
+    XB = XA + h*(k*BT_struct.B');
+    num_evals = length(BT_struct.B);
+end
+%% ITERATION SOLVER
+function [num_steps, h] = iteration_solver(tspan, h_ref)
+    t_range = tspan(2)-tspan(1);
+    num_steps = t_range/h_ref;%The number of steps is the range devided by goal h 
+    num_steps = ceil(num_steps);%Round the number of steps up (to get a real number)
+    h = t_range/num_steps; % Divide range by steps to get real h
 end
