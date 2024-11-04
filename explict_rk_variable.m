@@ -147,20 +147,31 @@ xlabel('Time (s)')
 ylabel('Velocity (m/s)')
 
 %% step size vs distance
-tspan = [0, 50];
+tspan = [0, 40];
+h_ref = 0.01
 
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
         (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
-
+X_list
 h_list = [diff(t_list)];
 radius = sqrt(X_list(1,:).^2 + X_list(2,:).^2);
 radius(1) = [];
 
-figure()
-scatter(radius, h_list, 'ob')
-title("Step Size vs. Distance from Planet to Sun")
-ylabel("Step Size (s)")
-xlabel("Distance (m)")
+% figure()
+% 
+% for i = 1:length(radius)
+%     xlim([0 20])
+%     ylim([0 5])
+%     plot(radius(i), h_list(i), 'ob');
+%     hold on;
+%     pause(0.25);
+% end
+
+% figure()
+% scatter(radius, h_list, 'ob')
+% title("Step Size vs. Distance from Planet to Sun")
+% ylabel("Step Size (s)")
+% xlabel("Distance (m)")
 
 
 

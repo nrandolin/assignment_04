@@ -27,8 +27,8 @@ h_ref = 0.05;
 
 %% testing integrator
 desired_error_range = linspace(0.0001,0.001,11);
-x0 = 6;
-y0 = 10;
+x0 = 4;
+y0 = 12;
 dxdt0 = 0;
 dydt0 = 1.5;
 h=0.03;
@@ -64,11 +64,11 @@ t_range = linspace(0,40,500);
 X_list_true = compute_planetary_motion(t_range,V0,orbit_params);
 
 h_list = linspace(0.001, 0.12, 100);
-
+DormandPrince.B = [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0];
 %[XB, num_evals] = explicit_RK_step(@rate_func01,t,XA,h,BT_struct);
-global_error_list = [];
-h_avg_list = [];
-num_evals_list = [];
+global_error_list_fixed = [];
+h_avg_list_fixed = [];
+num_evals_list_fixed = [];
 for i = 1:length(h_list)
     h = h_list(i);
     [t_list,X_list,h_avg, num_evals] = explicit_RK_fixed_step_integration ...
@@ -76,10 +76,39 @@ for i = 1:length(h_list)
     X_numerical = X_list(end, :)';
     X_analytical = compute_planetary_motion(tspan(2),V0,orbit_params);
     global_error = norm(X_numerical - X_analytical);
-    global_error_list_fixed = [global_error_list, global_error];
-    h_avg_list_fixed = [h_avg_list, h_avg];
-    num_evals_list_fixed = [num_evals_list, num_evals];
+    global_error_list_fixed = [global_error_list_fixed, global_error];
+    h_avg_list_fixed = [h_avg_list_fixed, h_avg];
+    num_evals_list_fixed = [num_evals_list_fixed, num_evals];
 end
+
+
+% global error vs. avg step size
+figure()
+loglog(h_avg_list_fixed, global_error_list_fixed, '.b', 'MarkerSize', 8)
+hold on
+loglog(h_avg_list, global_error_list, '.r', 'MarkerSize', 8)
+title("Global Error vs. Average Step Size")
+xlabel("Average Step Size")
+ylabel("Global Error")
+legend("Fixed Step", "Variable Step")
+
+% global error vs. num evals
+figure()
+loglog(num_evals_list_fixed, global_error_list_fixed, '.b', 'MarkerSize', 8)
+hold on
+loglog(num_evals_list, global_error_list, '.r', 'MarkerSize', 8)
+title("Global Error vs. Number of Evaluations")
+xlabel("Number of Evaluations")
+ylabel("Global Error")
+legend("Fixed Step", "Variable Step")
+
+figure()
+plot(h_avg_list, percent_failed_list, '.m', 'MarkerSize', 8)
+set(gca, 'XScale', 'log')
+title("Percent Failed vs. Average Step Size")
+xlabel("Average Step Size")
+ylabel("Percent Failed")
+
 
 % plot planet trajectory
 figure()
@@ -89,36 +118,10 @@ plot(X_list(:,1), X_list(:,2), 'r--','linewidth',2)
 title("Approximated vs. True Planet Trajectory")
 legend("True Solution", "Approximated Solution")
 
-% global error vs. avg step size
-figure()
-loglog(h_avg_list_fixed, global_error_list_fixed, 'b', 'LineWidth', 2)
-hold on
-loglog(h_avg_list, global_error_list, '.r', 'MarkerSize', 10)
-title("Global Error vs. Average Step Size")
-xlabel("Average Step Size")
-ylabel("Global Error")
-
-% global error vs. num evals
-figure()
-loglog(num_evals_list_fixed, global_error_list_fixed, 'b', 'LineWidth', 2)
-hold on
-loglog(num_evals_list, global_error_list, '.b', 'MarkerSize', 10)
-title("Global Error vs. Number of Evaluations")
-xlabel("Number of Evaluations")
-ylabel("Global Error")
-
-figure()
-plot(h_avg_list, percent_failed_list, '.m', 'MarkerSize', 10)
-set(gca, 'XScale', 'log')
-title("Percent Failed vs. Average Step Size")
-
-
-
-%figure()
-%plot(X_list(1,:), X_list(2,:))
-
 %% Velocity and Position
 tspan = [0, 40];
+DormandPrince.B = [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0;...
+5179/57600, 0, 7571/16695, 393/640, -92097/339200, 187/2100, 1/40];
 
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
         (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
@@ -144,20 +147,31 @@ xlabel('Time (s)')
 ylabel('Velocity (m/s)')
 
 %% step size vs distance
-tspan = [0, 40];
+tspan = [0, 50];
+h_ref = 0.01
 
 [t_list,X_list,h_avg, num_evals, percent_failed] = explicit_RK_variable_step_integration ...
         (my_rate_func,tspan,V0,h_ref,DormandPrince,p,.0001);
 
-h_list = [diff(t_list)]
+h_list = [diff(t_list)];
 radius = sqrt(X_list(1,:).^2 + X_list(2,:).^2);
-radius(1) = []
+radius(1) = [];
 
 figure()
-scatter(radius, h_list, 'ob')
-title("Step Size vs. Distance from Planet to Sun")
-ylabel("Step Size (s)")
-xlabel("Distance (m)")
+
+for i = 1:length(radius)
+    xlim([0 20])
+    ylim([0 5])
+    plot(radius(i), h_list(i), 'ob');
+    hold on;
+    pause(0.25);
+end
+
+% figure()
+% scatter(radius, h_list, 'ob')
+% title("Step Size vs. Distance from Planet to Sun")
+% ylabel("Step Size (s)")
+% xlabel("Distance (m)")
 
 
 
@@ -455,14 +469,6 @@ function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
     end
     XB = XA + h*(k*BT_struct.B');
     num_evals = length(BT_struct.B);
-end
-%% RATE_FUNC01
-function dXdt = rate_func01(t,X)
-dXdt = -5*X + 5*cos(t) - sin(t);
-end
-
-function X = solution01(t)
-X = cos(t);
 end
 %% ITERATION SOLVER
 function [num_steps, h] = iteration_solver(tspan, h_ref)
