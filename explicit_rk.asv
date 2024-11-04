@@ -113,7 +113,7 @@ for i = 1:length(h_list)
     
    X_true = [X_true, X_analytical];
    local_error_heun = [local_error_heun, norm(XB_heun - X_analytical)];
-   difference = [difference, norm(X_analytical-compute_planetary_motion(t_ref, V0, orbit_params))];
+   difference = [difference, norm(X_analytical-solution01(t_ref))];
 
 end
 
@@ -141,12 +141,10 @@ h = 0.1;
 [t_list_ralston,X_list_ralston,h_avg_ralston,num_evals_ralston] = explicit_RK_fixed_step_integration ...
 (my_rate_func,tspan,XA,h,BT_struct);
 
-V_true = compute_planetary_motion(t_list_ralston, V0, orbit_params);
-
 figure;
-plot(X_list_ralston(:,1),X_list_ralston(:,2), 'b', 'LineWidth', 2);
+plot(t_list_ralston,X_list_ralston, 'b', 'LineWidth', 2);
 hold on;
-plot(V_true(:,1),V_true(:,2), '--r', 'LineWidth', 2)
+plot(t_list_ralston,compute_planetary_motion(t_list_ralston, V0, orbit_params), '--r', 'LineWidth', 2)
 title("Ralston's Third-Order Method Approximated Solution")
 xlabel("t (sec)")
 ylabel("X")
@@ -162,17 +160,16 @@ difference = [];
 t_ref = 4.49;
 XA = compute_planetary_motion(t_ref, V0, orbit_params);
 
-
 for i = 1:length(h_list)
    h_ref = h_list(i);
     
-   [XB_ralston,~] = explicit_RK_step(my_rate_func,t_ref,XA,h_ref,BT_struct);
+   [XB_ralston,~] = explicit_RK_step(@rate_func01,t_ref,XA,h_ref,BT_struct);
 
-   X_analytical = compute_planetary_motion(t_ref+h_ref, V0, orbit_params);
+   X_analytical = solution01(t_ref+h_ref);
     
    X_true = [X_true, X_analytical];
    local_error_ralston = [local_error_ralston, norm(XB_ralston - X_analytical)];
-   difference = [difference, norm(X_analytical-compute_planetary_motion(t_ref, V0, orbit_params))];
+   difference = [difference, norm(X_analytical-solution01(t_ref))];
 
 end
 
@@ -219,20 +216,18 @@ BT_struct.A = [0, 0, 0, 0; 1/3, 0, 0, 0; -1/3, 1, 0, 0; 1, -1, 1, 0];
 BT_struct.B = [1/8, 3/8, 3/8, 1/8];
 BT_struct.C = [0; 1/3; 2/3; 1];
 t0 = 0;          % Start time
-tf = 30;        % End time (replace with the desired final time)
+tf = 5;        % End time (replace with the desired final time)
 tspan = [t0, tf];  % Full integration interval  
-XA = compute_planetary_motion(t0, V0, orbit_params);
+XA = solution01(t0);
 h = 0.1;
 
 [t_list_eighth,X_list_eighth,h_avg_eighth,num_evals_eighth] = explicit_RK_fixed_step_integration ...
-(my_rate_func,tspan,XA,h,BT_struct);
-
-V_true = compute_planetary_motion(t_list_eighth, V0, orbit_params);
+(@rate_func01,tspan,XA,h,BT_struct);
 
 figure;
-plot(X_list_eighth(:,1),X_list_eighth(:,2), 'b', 'LineWidth', 2);
+plot(t_list_eighth,X_list_eighth, 'b', 'LineWidth', 2);
 hold on;
-plot(V_true(:,1),V_true(:,2), '--r', 'LineWidth', 2)
+plot(t_list_eighth,solution01(t_list_eighth), '--r', 'LineWidth', 2)
 title("3/8-Rule Fourth-Order Approximated Solution")
 xlabel("t (sec)")
 ylabel("X")
@@ -246,18 +241,18 @@ X_true = [];
 difference = [];
 
 t_ref = 4.49;
-XA = compute_planetary_motion(t_ref, V0, orbit_params);
+XA = solution01(t_ref);
 
 for i = 1:length(h_list)
    h_ref = h_list(i);
     
-   [XB_eighth,~] = explicit_RK_step(my_rate_func,t_ref,XA,h_ref,BT_struct);
+   [XB_eighth,~] = explicit_RK_step(@rate_func01,t_ref,XA,h_ref,BT_struct);
 
-   X_analytical = compute_planetary_motion(t_ref+h_ref, V0, orbit_params);
+   X_analytical = solution01(t_ref+h_ref);
     
    X_true = [X_true, X_analytical];
    local_error_eighth = [local_error_eighth, norm(XB_eighth - X_analytical)];
-   difference = [difference, norm(X_analytical-compute_planetary_motion(t_ref, V0, orbit_params))];
+   difference = [difference, norm(X_analytical-solution01(t_ref))];
 
 end
 
