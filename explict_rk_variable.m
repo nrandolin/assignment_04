@@ -167,11 +167,11 @@ radius(1) = [];
 %     pause(0.25);
 % end
 
-% figure()
-% scatter(radius, h_list, 'ob')
-% title("Step Size vs. Distance from Planet to Sun")
-% ylabel("Step Size (s)")
-% xlabel("Distance (m)")
+figure()
+scatter(radius, h_list, 'ob')
+title("Step Size vs. Distance from Planet to Sun")
+ylabel("Step Size (s)")
+xlabel("Distance (m)")
 
 
 
